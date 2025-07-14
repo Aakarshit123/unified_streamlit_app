@@ -24,7 +24,7 @@ choice = st.sidebar.selectbox("Choose Functionality", [
 
 # ------------------ AI Chatbot ------------------
 if choice == "🤖 AI Chatbot":
-    genai.configure(api_key="YOUR_GEMINI_API_KEY")  # Replace this or use st.secrets
+    genai.configure(api_key="st.secrets")  # Replace this or use st.secrets
     model = genai.GenerativeModel("gemini-2.5-flash")
 
     def AI(prompt):
