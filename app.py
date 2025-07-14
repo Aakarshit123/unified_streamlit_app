@@ -191,5 +191,5 @@ elif choice == "📩 Send SMS":
 elif choice == "🔗 LinkedIn Post":
     st.title("🔗 LinkedIn OAuth")
    # st.markdown("1. Click below to authenticate.\n2. Then visit `/post` on your Flask server.")
-	st.markdown("🔗 Run your Flask LinkedIn OAuth on Replit or locally to use this feature.")
-	 st.link_button("Login via LinkedIn", "http://localhost:8000/")
+    st.markdown("🔗 Run your Flask LinkedIn OAuth on Replit or locally to use this feature.")
+     st.link_button("Login via LinkedIn", "http://localhost:8000/")
