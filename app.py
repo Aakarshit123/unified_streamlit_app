@@ -37,7 +37,7 @@ if choice == "🤖 AI Chatbot":
         prompt = (
             f"You are an expert in {category}. Give a summary, studio (if any), "
             f"and rate the {category.lower()} titled '{title}' on story, animation, characters, soundtrack, "
-            "and say whether you recommend it or not."
+            "and say whether you recommend it or not.Also if the user asks related questions answer them."
         )
         try:
             st.markdown(AI(prompt))
