@@ -24,7 +24,7 @@ choice = st.sidebar.selectbox("Choose Functionality", [
 
 # ------------------ AI Chatbot ------------------
 if choice == "🤖 AI Chatbot":
-    genai.configure(api_key="AIzaSyAo0xh_xUBQFk0K9b68brIGULqPw5Kabh8")  # Replace this or use st.secrets
+    genai.configure(api_key="AIzaSyAo0xh_xUBQFk0K9b68brIGULqPw5Kabh8")  # Use secrets in production
     model = genai.GenerativeModel("gemini-2.5-flash")
 
     def AI(prompt):
@@ -57,27 +57,43 @@ elif choice == "📸 Camera Capture":
 elif choice == "🐳 Docker Control":
     st.title("🐳 Docker Control Panel")
     operation = st.selectbox("Docker Operation", [
-        "Launch New Container", "Stop Container", "Remove Container",
-        "Start Container", "List Docker Images"
+        "Launch New Container", "Start Container", "Stop Container",
+        "Remove Container", "List Docker Images"
     ])
-    name = st.text_input("Container name")
-    image = st.text_input("Image name (if needed)")
-    if st.button("Execute"):
-        cmd = ""
-        if operation == "Launch New Container":
-            cmd = f"docker run -dit --name {name} {image}"
-        elif operation == "Stop Container":
-            cmd = f"docker stop {name}"
-        elif operation == "Remove Container":
-            cmd = f"docker rm -f {name}"
-        elif operation == "Start Container":
-            cmd = f"docker start {name}"
-        if cmd:
-            os.system(cmd)
-            st.success(f"{operation} executed.")
-    if operation == "List Docker Images" and st.button("List Images"):
-        output = os.popen("docker images").read()
-        st.text_area("Docker Images:", output, height=300)
+
+    name = image = ""
+
+    if operation in ["Launch New Container"]:
+        name = st.text_input("Container Name")
+        image = st.text_input("Docker Image Name")
+    elif operation in ["Stop Container", "Remove Container", "Start Container"]:
+        name = st.text_input("Container Name")
+
+    if operation != "List Docker Images":
+        if st.button("Execute Operation"):
+            if not name:
+                st.warning("Please enter a container name.")
+            else:
+                cmd = ""
+                if operation == "Launch New Container":
+                    if not image:
+                        st.warning("Image name is required.")
+                    else:
+                        cmd = f"docker run -dit --name {name} {image}"
+                elif operation == "Stop Container":
+                    cmd = f"docker stop {name}"
+                elif operation == "Remove Container":
+                    cmd = f"docker rm -f {name}"
+                elif operation == "Start Container":
+                    cmd = f"docker start {name}"
+
+                if cmd:
+                    result = os.popen(cmd).read()
+                    st.text_area("Result", result or f"{operation} executed.")
+    else:
+        if st.button("List Docker Images"):
+            output = os.popen("docker images").read()
+            st.text_area("Docker Images", output, height=300)
 
 # ------------------ Send Email ------------------
 elif choice == "📧 Send Email":
@@ -87,20 +103,24 @@ elif choice == "📧 Send Email":
     subject = st.text_input("Subject")
     body = st.text_area("Message")
     password = st.text_input("App Password", type="password")
+
     if st.button("Send Email"):
-        msg = EmailMessage()
-        msg['From'] = sender
-        msg['To'] = recipient
-        msg['Subject'] = subject
-        msg.set_content(body)
-        try:
-            with smtplib.SMTP("smtp.gmail.com", 587) as server:
-                server.starttls()
-                server.login(sender, password)
-                server.send_message(msg)
-                st.success("✅ Email sent!")
-        except Exception as e:
-            st.error(f"Email Error: {str(e)}")
+        if not all([sender, recipient, subject, body, password]):
+            st.warning("Fill all fields before sending.")
+        else:
+            msg = EmailMessage()
+            msg['From'] = sender
+            msg['To'] = recipient
+            msg['Subject'] = subject
+            msg.set_content(body)
+            try:
+                with smtplib.SMTP("smtp.gmail.com", 587) as server:
+                    server.starttls()
+                    server.login(sender, password)
+                    server.send_message(msg)
+                    st.success("✅ Email sent!")
+            except Exception as e:
+                st.error(f"Email Error: {str(e)}")
 
 # ------------------ Twilio Call ------------------
 elif choice == "📞 Make Call":
@@ -110,16 +130,19 @@ elif choice == "📞 Make Call":
     from_no = st.text_input("Twilio Number (+countrycode)")
     to_no = st.text_input("Recipient Number (+countrycode)")
     if st.button("Make Call"):
-        try:
-            client = Client(sid, token)
-            call = client.calls.create(
-                to=to_no,
-                from_=from_no,
-                url="http://demo.twilio.com/docs/voice.xml"
-            )
-            st.success(f"Call initiated! SID: {call.sid}")
-        except Exception as e:
-            st.error(f"Call Error: {str(e)}")
+        if not all([sid, token, from_no, to_no]):
+            st.warning("Please fill in all fields.")
+        else:
+            try:
+                client = Client(sid, token)
+                call = client.calls.create(
+                    to=to_no,
+                    from_=from_no,
+                    url="http://demo.twilio.com/docs/voice.xml"
+                )
+                st.success(f"Call initiated! SID: {call.sid}")
+            except Exception as e:
+                st.error(f"Call Error: {str(e)}")
 
 # ------------------ Facebook Post ------------------
 elif choice == "📘 Facebook Post":
@@ -128,14 +151,17 @@ elif choice == "📘 Facebook Post":
     token = st.text_input("Page Access Token")
     message = st.text_area("Message")
     if st.button("Post to Facebook"):
-        r = requests.post(
-            f"https://graph.facebook.com/{page_id}/feed",
-            data={"message": message, "access_token": token}
-        )
-        if r.status_code == 200:
-            st.success("✅ Post published!")
+        if not all([page_id, token, message]):
+            st.warning("All fields are required.")
         else:
-            st.error(f"Facebook API Error: {r.json()}")
+            r = requests.post(
+                f"https://graph.facebook.com/{page_id}/feed",
+                data={"message": message, "access_token": token}
+            )
+            if r.status_code == 200:
+                st.success("✅ Post published!")
+            else:
+                st.error(f"Facebook API Error: {r.json()}")
 
 # ------------------ Instagram Post ------------------
 elif choice == "📷 Instagram Post":
@@ -145,29 +171,32 @@ elif choice == "📷 Instagram Post":
     image_url = st.text_input("Public Image URL")
     caption = st.text_area("Caption")
     if st.button("Post to Instagram"):
-        try:
-            container_res = requests.post(
-                f"https://graph.facebook.com/v18.0/{account_id}/media",
-                data={
-                    "image_url": image_url,
-                    "caption": caption,
-                    "access_token": access_token
-                }
-            ).json()
-            cont_id = container_res.get("id")
-            if cont_id:
-                publish_res = requests.post(
-                    f"https://graph.facebook.com/v18.0/{account_id}/media_publish",
-                    data={"creation_id": cont_id, "access_token": access_token}
-                )
-                if publish_res.status_code == 200:
-                    st.success("✅ Post published to Instagram!")
+        if not all([access_token, account_id, image_url]):
+            st.warning("Access token, account ID, and image URL are required.")
+        else:
+            try:
+                container_res = requests.post(
+                    f"https://graph.facebook.com/v18.0/{account_id}/media",
+                    data={
+                        "image_url": image_url,
+                        "caption": caption,
+                        "access_token": access_token
+                    }
+                ).json()
+                cont_id = container_res.get("id")
+                if cont_id:
+                    publish_res = requests.post(
+                        f"https://graph.facebook.com/v18.0/{account_id}/media_publish",
+                        data={"creation_id": cont_id, "access_token": access_token}
+                    )
+                    if publish_res.status_code == 200:
+                        st.success("✅ Post published to Instagram!")
+                    else:
+                        st.error(f"Instagram Publish Error: {publish_res.json()}")
                 else:
-                    st.error(f"Instagram Publish Error: {publish_res.json()}")
-            else:
-                st.error(f"Container Error: {container_res}")
-        except Exception as e:
-            st.error(f"Instagram Error: {str(e)}")
+                    st.error(f"Container Error: {container_res}")
+            except Exception as e:
+                st.error(f"Instagram Error: {str(e)}")
 
 # ------------------ HTML Interpreter ------------------
 elif choice == "🧾 HTML Interpreter":
@@ -201,14 +230,17 @@ elif choice == "📩 Send SMS":
     numbers = st.text_input("Recipient Number(s)")
     message = st.text_area("Message")
     if st.button("Send SMS"):
-        data = {
-            'apikey': api_key,
-            'numbers': numbers,
-            'message': message,
-            'sender': 'TXTLCL'
-        }
-        try:
-            response = requests.post("https://api.textlocal.in/send/", data=data)
-            st.json(response.json())
-        except Exception as e:
-            st.error(f"SMS Error: {str(e)}")
+        if not all([api_key, numbers, message]):
+            st.warning("All fields are required.")
+        else:
+            data = {
+                'apikey': api_key,
+                'numbers': numbers,
+                'message': message,
+                'sender': 'TXTLCL'
+            }
+            try:
+                response = requests.post("https://api.textlocal.in/send/", data=data)
+                st.json(response.json())
+            except Exception as e:
+                st.error(f"SMS Error: {str(e)}")
